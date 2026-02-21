@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS NEWS — En Vivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #e8202a;
+    --dark: #0a0a0c;
+    --panel: #111116;
+    --border: #222228;
+    --text: #e2e2e8;
+    --muted: #888896;
+    --accent: #f0c040;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 56px 1fr 48px;
+    grid-template-columns: 1fr 320px;
+    grid-template-areas:
+      "header header"
+      "main   sidebar"
+      "ticker ticker";
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--red);
+  }
+  .logo span { color: var(--text); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--red);
+    padding: 4px 14px;
+    border-radius: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 2px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .clock {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ─── MAIN ─── */
+  main {
+    grid-area: main;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    padding: 16px;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  /* Camera */
+  .camera-wrap {
+    position: relative;
+    background: #000;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  #camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1);
+  }
+
+  .cam-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  /* corner brackets */
+  .cam-overlay::before, .cam-overlay::after {
+    content: '';
+    position: absolute;
+    width: 32px; height: 32px;
+    border-color: var(--red);
+    border-style: solid;
+  }
+  .cam-overlay::before { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+  .cam-overlay::after  { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+  .cam-label {
+    position: absolute;
+    bottom: 14px; left: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    background: rgba(0,0,0,.6);
+    padding: 3px 8px;
+  }
+
+  .cam-rec {
+    position: absolute;
+    top: 14px; right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #fff;
+    background: rgba(232,32,42,.85);
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .cam-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .cam-error svg { opacity: .4; }
+
+  /* Lower third */
+  .lower-third {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--red);
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 2px;
+  }
+  .lower-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--red);
+  }
+  .lower-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .lower-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* ─── SIDEBAR ─── */
+  aside {
+    grid-area: sidebar;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .section-title {
+    padding: 14px 18px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .news-list {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .news-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+    animation: slideIn .4s ease both;
+  }
+  .news-item:hover { background: rgba(255,255,255,.03); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .news-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  .tag-breaking { background: var(--red); color: #fff; }
+  .tag-world    { background: #1a3a5c; color: #7ab5e0; }
+  .tag-tech     { background: #1a3c1a; color: #6ed86e; }
+  .tag-economy  { background: #3a2a0a; color: var(--accent); }
+
+  .news-headline {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+  .news-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .weather-block {
+    padding: 16px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+  }
+  .weather-city { font-size: 12px; color: var(--muted); }
+  .weather-temp { font-family: 'Bebas Neue', sans-serif; font-size: 32px; }
+  .weather-desc { font-size: 11px; color: var(--muted); }
+
+  /* ─── SIDEBAR TOGGLE BTN (mobile only) ─── */
+  .sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    color: var(--text);
+  }
+
+  /* ─── MOBILE DRAWER OVERLAY ─── */
+  .drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 40;
+    backdrop-filter: blur(2px);
+  }
+  .drawer-overlay.open { display: block; }
+
+  /* ─── MOBILE: responsive layout ─── */
+  @media (max-width: 700px) {
+    body {
+      grid-template-columns: 1fr;
+      grid-template-rows: 52px 1fr 44px;
+      grid-template-areas:
+        "header"
+        "main"
+        "ticker";
+    }
+
+    .sidebar-toggle { display: flex; align-items: center; justify-content: center; }
+
+    aside {
+      grid-area: unset;
+      position: fixed;
+      top: 0; right: 0;
+      width: min(320px, 85vw);
+      height: 100dvh;
+      z-index: 50;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+    }
+    aside.open { transform: translateX(0); }
+
+    main { padding: 10px; gap: 10px; }
+
+    .cam-label { font-size: 9px; }
+    .lower-title { font-size: 18px; }
+    .clock { display: none; }
+  }
+
+  /* ─── TICKER ─── */
+  footer {
+    grid-area: ticker;
+    display: flex;
+    align-items: center;
+    background: var(--red);
+    overflow: hidden;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .ticker-label {
+    padding: 0 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 3px;
+    background: #000;
+    color: var(--red);
+    white-space: nowrap;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-right: 2px solid rgba(255,255,255,.2);
+    flex-shrink: 0;
+  }
+  .ticker-track {
+    overflow: hidden;
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-inner {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    animation: ticker 40s linear infinite;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .5px;
+  }
+  .ticker-sep { margin: 0 32px; opacity: .5; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+</style>
+</head>
+<body>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">NEXUS<span>NEWS</span></div>
+  <div class="live-badge"><div class="live-dot"></div>EN VIVO</div>
+  <div class="clock" id="clock">--:--:--</div>
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Noticias">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h10"/>
+    </svg>
+  </button>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="camera-wrap">
+    <video id="camera-video" autoplay playsinline muted style="display:none"></video>
+    <div class="cam-overlay"></div>
+    <div class="cam-rec" id="cam-rec" style="display:none"><div class="live-dot"></div> REC</div>
+    <div class="cam-label" id="cam-label" style="display:none">CAM-01 · ESTUDIO PRINCIPAL</div>
+
+    <!-- Permission prompt shown by default -->
+    <div class="cam-error" id="cam-prompt">
+      <svg width="52" height="52" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+        <path d="M15 10l4.553-2.277A1 1 0 0121 8.65v6.7a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+      </svg>
+      <span style="color:var(--text);font-size:14px;font-weight:500">Cámara en vivo</span>
+      <span style="font-size:12px;text-align:center;max-width:220px">Toca el botón para activar tu cámara y aparecer en pantalla</span>
+      <button id="cam-btn" onclick="startCamera()" style="
+        margin-top:8px;
+        background:var(--red);
+        color:#fff;
+        border:none;
+        padding:10px 24px;
+        font-family:'DM Mono',monospace;
+        font-size:13px;
+        letter-spacing:2px;
+        border-radius:2px;
+        cursor:pointer;
+      ">▶ ACTIVAR CÁMARA</button>
+    </div>
+
+    <!-- Error state -->
+    <div class="cam-error" id="cam-error" style="display:none">
+      <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+        <path d="M15 10l4.553-2.277A1 1 0 0121 8.65v6.7a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+        <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor"/>
+      </svg>
+      <span id="cam-error-msg">Sin acceso a cámara</span>
+      <button onclick="startCamera()" style="
+        margin-top:8px;background:var(--border);color:var(--text);
+        border:none;padding:8px 18px;font-family:'DM Mono',monospace;
+        font-size:11px;letter-spacing:2px;border-radius:2px;cursor:pointer;
+      ">REINTENTAR</button>
+    </div>
+  </div>
+
+  <div class="lower-third">
+    <div class="lower-label">BREAKING NEWS</div>
+    <div class="lower-title" id="headline-title">Líderes mundiales se reúnen en cumbre de emergencia climática</div>
+    <div class="lower-sub">Corresponsal en Ginebra · Actualizado hace 4 minutos</div>
+  </div>
+</main>
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="section-title">ÚLTIMAS NOTICIAS</div>
+  <div class="news-list" id="news-list"></div>
+  <div class="weather-block">
+    <div>
+      <div class="weather-city">Ciudad de México</div>
+      <div class="weather-desc">Parcialmente nublado</div>
+    </div>
+    <div class="weather-temp">22°</div>
+  </div>
+</aside>
+
+<!-- TICKER -->
+<footer>
+  <div class="ticker-label">ÚLTIMAS</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="ticker"></div>
+  </div>
+</footer>
+
+<script>
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('es-MX', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── CAMERA ───
+async function startCamera() {
+  const video = document.getElementById('camera-video');
+  const prompt = document.getElementById('cam-prompt');
+  const errBox = document.getElementById('cam-error');
+  const errMsg = document.getElementById('cam-error-msg');
+  const rec = document.getElementById('cam-rec');
+  const label = document.getElementById('cam-label');
+
+  prompt.style.display = 'none';
+  errBox.style.display = 'none';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    rec.style.display = 'flex';
+    label.style.display = 'block';
+  } catch (e) {
+    video.style.display = 'none';
+    errBox.style.display = 'flex';
+    errMsg.textContent = e.name === 'NotAllowedError'
+      ? 'Permiso denegado. Revisa los ajustes del navegador.'
+      : 'No se encontró cámara disponible.';
+  }
+}
+
+// ─── SIDEBAR TOGGLE ───
+const sidebar = document.querySelector('aside');
+const overlay = document.getElementById('drawer-overlay');
+const toggleBtn = document.getElementById('sidebar-toggle');
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  overlay.classList.add('open');
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+}
+toggleBtn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+overlay.addEventListener('click', closeSidebar);
+
+// ─── NEWS DATA ───
+const news = [
+  { tag: 'breaking', label: 'URGENTE', headline: 'Terremoto de magnitud 6.4 sacude el Pacífico; alerta de tsunami activada', time: 'hace 2 min' },
+  { tag: 'world',    label: 'MUNDO',   headline: 'ONU aprueba resolución histórica sobre regulación de IA en conflictos', time: 'hace 18 min' },
+  { tag: 'economy',  label: 'ECONOMÍA',headline: 'Dólar sube 1.3% tras declaraciones de la Reserva Federal sobre tasas', time: 'hace 35 min' },
+  { tag: 'tech',     label: 'TECNOLOGÍA', headline: 'Nueva misión espacial de la ESA llega a la órbita de Marte sin contratiempos', time: 'hace 1h' },
+  { tag: 'world',    label: 'MUNDO',   headline: 'Acuerdo de alto el fuego en conflicto fronterizo entra en vigencia a medianoche', time: 'hace 2h' },
+  { tag: 'economy',  label: 'ECONOMÍA',headline: 'Bolsas europeas cierran al alza impulsadas por datos de empleo positivos', time: 'hace 3h' },
+  { tag: 'tech',     label: 'TECNOLOGÍA', headline: 'Vulnerabilidad crítica afecta a millones de dispositivos Android; parchear de inmediato', time: 'hace 4h' },
+];
+
+const tagClass = { breaking: 'tag-breaking', world: 'tag-world', tech: 'tag-tech', economy: 'tag-economy' };
+
+const list = document.getElementById('news-list');
+news.forEach((n, i) => {
+  const el = document.createElement('div');
+  el.className = 'news-item';
+  el.style.animationDelay = `${i * 0.08}s`;
+  el.innerHTML = `
+    <span class="news-tag ${tagClass[n.tag]}">${n.label}</span>
+    <div class="news-headline">${n.headline}</div>
+    <div class="news-meta">${n.time}</div>
+  `;
+  list.appendChild(el);
+});
+
+// ─── TICKER ───
+const tickerItems = [
+  'Presidenta anuncia paquete de inversión en infraestructura por 80,000 MDP',
+  'Clasificación al Mundial: México vence 2-1 a Costa Rica en tiempo extra',
+  'Alerta naranja por frente frío número 18 en el norte del país',
+  'Banco de México mantiene tasa de interés en 9.25% por tercer mes consecutivo',
+  'Erupción menor del Popocatépetl; semáforo de alerta en amarillo fase 2',
+  'Premio Nobel de Química anunciado: reconocen avance en proteínas sintéticas',
+  'Caída global de plataformas de redes sociales reportada en más de 40 países',
+];
+
+const track = document.getElementById('ticker');
+// duplicate for seamless loop
+const fullText = [...tickerItems, ...tickerItems]
+  .map(t => `${t}<span class="ticker-sep">◆</span>`)
+  .join('');
+track.innerHTML = fullText;
+
+// ─── ROTATE HEADLINE ───
+const headlines = [
+  'Líderes mundiales se reúnen en cumbre de emergencia climática',
+  'Gobierno presenta reforma constitucional en materia de seguridad',
+  'Descubren nuevo exoplaneta potencialmente habitable a 40 años luz',
+  'Mercados financieros reaccionan positivamente a datos de inflación',
+];
+let hi = 0;
+setInterval(() => {
+  hi = (hi + 1) % headlines.length;
+  const el = document.getElementById('headline-title');
+  el.style.opacity = '0';
+  setTimeout(() => { el.textContent = headlines[hi]; el.style.opacity = '1'; }, 300);
+}, 8000);
+document.getElementById('headline-title').style.transition = 'opacity .3s';
+</script>
+</body>
+</html>
